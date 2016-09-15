@@ -10,13 +10,37 @@ import Foundation
 import CoreLocation
 import ObjectMapper
 
-class ArticleImageController {
-    //let articleList = Mapper<Article>().mapArray(geosearch)
+enum LoadingStatus {
+    case Idle, Loading, Loaded, Error(NSError)
+}
 
+class ArticleImageController {
+    
+    private(set) var groupList: [ImageGroup]?
+    
     private let articleClient = ArticleClient()
     private let articleImageClient = ArticleImageClient()
-
+    
+    enum Notification:String {
+        case StateDidChange = "StateDidChange"
+    }
+    
+    private(set) var loadingState = LoadingStatus.Idle {
+        didSet {
+            postNotification(Notification.StateDidChange)
+        }
+    }
+    
     func loadArticles(forCoordinates coordinates: CLLocationCoordinate2D) {
+        switch loadingState {
+        case .Loading:
+            return
+        default:break
+        }
+        
+        groupList = nil
+        loadingState = .Loading
+        
         articleClient.loadArticles(forLocation: coordinates,
         success: { articleDataList in
             guard let data = articleDataList else {
@@ -28,8 +52,7 @@ class ArticleImageController {
 
         },
         failure: { error in
-                //TODO: Show error
-                print(error)
+            self.loadingState = .Error(error)
         })
     }
 
@@ -46,8 +69,7 @@ class ArticleImageController {
             self.handleArticleImageLoaded(withArticlesDictionary: pagesDictionary)
         },
         failure: { error in
-            //TODO: Show error
-            print(error)
+            self.loadingState = .Error(error)
         })
     }
 
@@ -61,6 +83,15 @@ class ArticleImageController {
             }
         }
 
-        let imageGroup = ImageGroup(imageList: imageList)
+        let imageGroupAlg = ImageGroupAlgorithm(imageList: imageList)
+        imageGroupAlg.getGroups { groupList in
+            self.groupList = groupList
+            self.loadingState = .Loaded
+        }
+    }
+    
+    //MARK: Notifications
+    private func postNotification(notif: Notification) {
+        NSNotificationCenter.defaultCenter().postNotificationName(notif.rawValue, object: self)
     }
 }

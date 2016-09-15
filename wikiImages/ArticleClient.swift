@@ -19,6 +19,7 @@ class ArticleClient {
         
         parameters["gscoord"] = "\(location.latitude)|\(location.longitude)"
         parameters["gsradius"] = 1000
+        parameters["gslimit"] = 50
 
         return ApiEndpoint.frontend.request(parameters, completionHandler: { result in
             switch result {
