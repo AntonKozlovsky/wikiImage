@@ -17,11 +17,11 @@ class ArticleImageClient {
             pageIdList += "\(pageid.integerValue)|"
         }
 
-        let parameters =
+        let parameters : [String:AnyObject] =
             ["pageids":pageIdList,
               "prop":"images",
               "action":"query",
-              "imlimit":"max"]
+              "imlimit":500]
 
         return ApiEndpoint.frontend.request(parameters, completionHandler: { result in
             switch result {
